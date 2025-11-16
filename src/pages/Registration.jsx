@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Mail, Lock, User, Eye, EyeOff, Briefcase, ArrowLeft } from "lucide-react";
 import { useNavigate, NavLink } from "react-router";
 
-export default function Register() {
+export default function Registration() {
   const navigate = useNavigate();
 
   const [isLogin, setIsLogin] = useState(true);
@@ -20,21 +20,35 @@ export default function Register() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = (e) => {
+  e.preventDefault();
 
-    if (isLogin) {
-      if (formData.role.toLowerCase() === "admin") {
-        navigate("/portal");
-      } else {
-        navigate("/menu");
-      }
-      alert(`✅ Logged in as ${formData.email}`);
+  // Save user info to localStorage
+  localStorage.setItem("user", JSON.stringify(formData));
+
+  if (isLogin) {
+    // Login logic
+    if (formData.role.toLowerCase() === "admin") {
+      navigate("/portal");
     } else {
-      alert(`✅ Account created for ${formData.email}`);
-      setIsLogin(true);
+      navigate("/menu");
     }
-  };
+    alert(`✅ Logged in as ${formData.email}`);
+  } else {
+    // Signup logic
+    alert(`✅ Account created for ${formData.email}`);
+    setIsLogin(true);
+
+    // Navigate based on role
+    if (formData.role.toLowerCase() === "admin") {
+      navigate("/portal");
+    } else {
+      navigate("/menu");
+    }
+  }
+};
+
+
 
   const toggleForm = () => {
     setIsLogin(!isLogin);

@@ -18,7 +18,7 @@ function Navigation() {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-[#C7AD7F] rounded-t-2xl border-2 border-black flex justify-around py-5 shadow-inner">
+    <div className="fixed bottom-0 left-0 right-0 bg-[#C7AD7F] rounded-t-2xl border-2 flex justify-around py-5">
       {icons.map(({ name, icon: Icon, path }) => {
         const isActive = location.pathname === path; // check if current path matches
         return (
