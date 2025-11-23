@@ -7,24 +7,21 @@ import { useNavigate } from "react-router";
 export default function FavoritesPage() {
   const { favorites, removeFromFavorites } = useFavorites();
   const navigate = useNavigate();
-
   const [openModal, setOpenModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [favItems, setFavItems] = useState([]);
 
-  // Sync favorites with localStorage products
   useEffect(() => {
-    // Map favorites to have consistent structure with AdminProduct
     const savedFavorites = favorites.map((item) => ({
       ...item,
-      img: item.img || item.image_url, // fallback for AdminProduct items
-      description: item.description || item.desc || "", // fallback
+      img: item.img || item.image_url, 
+      description: item.description || item.desc || "", 
     }));
     setFavItems(savedFavorites);
   }, [favorites]);
 
   const openRemoveModal = (e, item) => {
-    e.stopPropagation(); // Prevent navigation
+    e.stopPropagation(); 
     setSelectedItem(item);
     setOpenModal(true);
   };
@@ -50,7 +47,6 @@ export default function FavoritesPage() {
               className="flex items-center w-full bg-white shadow-md overflow-hidden hover:scale-105 transition cursor-pointer"
               onClick={() => navigate(`/product/${item.id}`)}
             >
-              {/* LEFT IMAGE */}
               <div className="w-20 h-20 bg-[#0F3A2E] flex items-center justify-center">
                 <img
                   src={item.img || "/placeholder.png"}
@@ -59,15 +55,12 @@ export default function FavoritesPage() {
                 />
               </div>
 
-              {/* TEXT */}
               <div className="flex-1 px-4">
                 <h3 className="text-black font-semibold text-2xl leading-tight">
                   {item.name}
                 </h3>
-                <p className="text-black text-sm line-clamp-2">{item.description}</p>
               </div>
 
-              {/* HEART & DOTS */}
               <div className="flex items-center gap-3 pr-3">
                 <button
                   onClick={(e) => {
@@ -87,7 +80,6 @@ export default function FavoritesPage() {
         </div>
       )}
 
-      {/* REMOVE CONFIRMATION MODAL */}
       {openModal && selectedItem && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
           <div className="bg-white rounded-xl text-center p-6 w-full max-w-sm shadow-xl">
@@ -95,7 +87,6 @@ export default function FavoritesPage() {
             <p className="text-black text-xl mb-6">{selectedItem.name}</p>
 
             <div className="flex flex-col gap-3">
-              {/* REMOVE */}
               <button
                 className="bg-[#E7524E] text-black py-2 rounded-lg font-semibold"
                 onClick={() => {
@@ -106,7 +97,6 @@ export default function FavoritesPage() {
                 Remove
               </button>
 
-              {/* CANCEL */}
               <button
                 className=" py-2 rounded-lg font-semibold"
                 onClick={closeModal}

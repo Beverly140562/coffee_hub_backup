@@ -1,72 +1,83 @@
-import { ChevronLeft, Plus, Trash2 } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router';
-import { useLocation } from "react-router";
+import { ChevronLeft, Plus, Trash2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router";
+import { supabase } from "../config/supabase";
+import toast from "react-hot-toast";
 
-function AdminProduct({ showForm = true, showTable = true }) {
+function AdminProduct({ showForm = true, showTable = false }) {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [initialized, setInitialized] = useState(false);
-  const [showMessage, setShowMessage] = useState('');
-  const [form, setForm] = useState({
-    name: '',
-    price: '',
-    category: '',
-    image_url: '',
-    description: ''
-  });
-
   const location = useLocation();
 
-  // Load once
-  useEffect(() => {
-    const savedProducts = JSON.parse(localStorage.getItem('products')) || [];
-    setProducts(savedProducts);
-    setInitialized(true);
-  }, []);
+  const [products, setProducts] = useState([]);
+  const [form, setForm] = useState({
+    name: "",
+    price: "",
+    category: "",
+    image_url: "",
+    description: "",
+    detail:"",
+  });
+  const [showMessage, setShowMessage] = useState("");
 
-  // Save only after initialized
+  // Fetch products from Supabase
   useEffect(() => {
-    if (!initialized) return;
-    localStorage.setItem('products', JSON.stringify(products));
-  }, [products, initialized]);
+    async function fetchProducts() {
+      const { data, error } = await supabase.from("products").select("*").order("id", { ascending: true });
+      if (error) {
+        console.error(error);
+        return;
+      }
+      setProducts(data);
+    }
+    fetchProducts();
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleAddProduct = (e) => {
-    e.preventDefault();
+  const handleAddProduct = async (e) => {
+  e.preventDefault();
 
-    if (!form.name || !form.price || !form.category) {
-      alert("Please fill in all required fields!");
+  if (!form.name || !form.price || !form.category) {
+    toast.error("Please fill in all required fields!");
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("products")
+    .insert([
+      {
+        name: form.name,
+        price: Number(form.price),
+        category: form.category,
+        image_url: form.image_url,
+        description: form.description,
+        detail: form.detail,
+      },
+    ])
+    .select(); // ensure inserted row is returned
+
+  if (error) {
+    console.error(error);
+    toast.error("Failed to add product");
+    return;
+  }
+
+  setProducts([...products, data[0]]);
+  setForm({ name: "", price: "", category: "", image_url: "", description: "", detail: "", });
+  setShowMessage("✅ Product added successfully!");
+  setTimeout(() => setShowMessage(""), 3000);
+};
+
+
+  const handleDelete = async (id) => {
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) {
+      console.error(error);
+      toast.error("Failed to delete product");
       return;
     }
-
-    const newProduct = {
-      id: crypto.randomUUID(),
-      name: form.name,
-      price: Number(form.price),
-      category: form.category,
-      image_url: form.image_url,
-      description: form.description,
-    };
-
-    setProducts([...products, newProduct]);
-
-    setForm({
-      name: '',
-      price: '',
-      category: '',
-      image_url: '',
-      description: ''
-    });
-
-    setShowMessage('✅ Product added successfully!');
-    setTimeout(() => setShowMessage(''), 3000);
-  };
-
-  const handleDelete = (id) => {
     setProducts(products.filter((p) => p.id !== id));
   };
 
@@ -83,20 +94,16 @@ function AdminProduct({ showForm = true, showTable = true }) {
         </NavLink>
       )}
 
-      <h2 className="text-3xl font-semibold text-black pl-5 pb-3">Add Products</h2>
+      <h2 className="text-3xl font-semibold text-black pl-10 pb-3">Add Products</h2>
 
       <div className="flex justify-center">
-        <button
-          onClick={() => navigate("/add-product")}
-          className={buttonClass}
-        >
-          <Plus size={20} />
-          Add New Coffee
+        <button onClick={() => navigate("/add-product")} className={buttonClass}>
+          <Plus size={20} /> Add New Coffee
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleAddProduct} className="p-5 mb-8 m-8 space-y-4 border rounded-lg bg-white/40 backdrop-blur">
+        <form onSubmit={handleAddProduct} className="p-6 mb-8 m-5 space-y-4 border backdrop-blur">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input
               name="name"
@@ -105,7 +112,6 @@ function AdminProduct({ showForm = true, showTable = true }) {
               placeholder="Product Name"
               className="w-full p-2 border-2 border-black rounded"
             />
-
             <input
               name="price"
               value={form.price}
@@ -114,20 +120,17 @@ function AdminProduct({ showForm = true, showTable = true }) {
               type="number"
               className="w-full p-2 border-2 border-black rounded"
             />
-
-            {/* CATEGORY FIXED — DROPDOWN */}
             <select
               name="category"
               value={form.category}
               onChange={handleChange}
               className="w-full p-2 border-2 border-black rounded"
             >
-              <option value="">Select Category</option>
+              <option value="">Category</option>
               <option value="Hot Coffee">Hot Coffee</option>
               <option value="Cold Coffee">Cold Coffee</option>
               <option value="Frappuccino">Frappuccino</option>
             </select>
-
             <input
               name="image_url"
               value={form.image_url}
@@ -135,7 +138,6 @@ function AdminProduct({ showForm = true, showTable = true }) {
               placeholder="Image URL"
               className="w-full p-2 border-2 border-black rounded"
             />
-
             <textarea
               name="description"
               value={form.description}
@@ -144,9 +146,17 @@ function AdminProduct({ showForm = true, showTable = true }) {
               className="w-full p-2 border-2 border-black rounded resize-none col-span-1 sm:col-span-2"
               rows={3}
             />
+            <textarea
+              name="detail"
+              value={form.detail}
+              onChange={handleChange}
+              placeholder="Detail"
+              className="w-full p-2 border-2 border-black rounded resize-none col-span-1 sm:col-span-2"
+              rows={2}
+            />
           </div>
 
-          <button className="bg-amber-900 text-white w-full py-2 rounded hover:bg-amber-800 transition">
+          <button className="bg-[#8B4411] mt-20 text-black text-2xl font-semibold w-full py-2 border-2 rounded transition">
             Add Product
           </button>
 
@@ -161,11 +171,10 @@ function AdminProduct({ showForm = true, showTable = true }) {
               <tr>
                 <th className="px-4 py-2 border">Coffee Name</th>
                 <th className="px-4 py-2 border">Category</th>
-                <th className="px-4 py-2 border">Price</th>
+                <th className="px-5 py-2 border">Price</th>
                 <th className="px-4 py-2 border">Delete</th>
               </tr>
             </thead>
-
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className="transition">
@@ -173,17 +182,13 @@ function AdminProduct({ showForm = true, showTable = true }) {
                   <td className="px-4 py-2 text-center border">{p.category}</td>
                   <td className="px-4 py-2 text-center border">₱ {p.price}</td>
                   <td className="px-4 py-2 border text-center">
-                    <button
-                      onClick={() => handleDelete(p.id)}
-                      className="px-3 py-1 transition"
-                    >
+                    <button onClick={() => handleDelete(p.id)} className="px-3 py-1 transition">
                       <Trash2 />
                     </button>
                   </td>
                 </tr>
               ))}
             </tbody>
-
           </table>
         </div>
       )}

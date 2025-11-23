@@ -12,14 +12,13 @@ function ProfilePage() {
     if (savedUser) {
       setUser(savedUser);
     } else {
-      // redirect if no user data found
       navigate("/signup");
     }
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    navigate("/signup");
+    navigate("/login");
   };
 
   return (

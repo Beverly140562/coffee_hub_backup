@@ -1,36 +1,52 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import { supabase } from "../config/supabase";
+import toast from "react-hot-toast";
 
-function AdminManage() {
+export default function AdminManage() {
   const [orders, setOrders] = useState([]);
 
-  // Load all users' orders from localStorage
+  // Fetch all orders from Supabase
   useEffect(() => {
-    const allOrders = [];
-    for (let key in localStorage) {
-      if (key.startsWith("orders_")) {
-        const userOrders = JSON.parse(localStorage.getItem(key)) || [];
-        const userName = key.replace("orders_", "");
-        userOrders.forEach(order => order.userName = userName); // attach username
-        allOrders.push(...userOrders);
+    async function fetchOrders() {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, user_id, items, total, status, created_at, users(first_name)")
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (error) {
+        toast.error("Failed to fetch orders");
+        return;
       }
+
+      // Map user name from related users table
+      const formattedOrders = data.map((order) => ({
+        ...order,
+        userName: order.users?.first_name || "Guest",
+      }));
+
+      setOrders(formattedOrders);
     }
-    setOrders(allOrders);
+
+    fetchOrders();
   }, []);
 
-  // Handle status change and persist to localStorage
-  const handleStatusChange = (orderId, userName, newStatus) => {
-    const userOrders = JSON.parse(localStorage.getItem(`orders_${userName}`)) || [];
-    const updatedOrders = userOrders.map(order =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    );
-    localStorage.setItem(`orders_${userName}`, JSON.stringify(updatedOrders));
+  // Update order status in Supabase
+  const handleStatusChange = async (orderId, newStatus) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: newStatus })
+      .eq("id", orderId);
 
-    // Update state
-    setOrders(prev =>
-      prev.map(order =>
-        order.id === orderId && order.userName === userName
-          ? { ...order, status: newStatus }
-          : order
+    if (error) {
+      toast.error("Failed to update order status");
+      return;
+    }
+
+    // Update local state
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.id === orderId ? { ...order, status: newStatus } : order
       )
     );
   };
@@ -39,7 +55,7 @@ function AdminManage() {
     <div className="w-full p-2">
       <h2 className="text-2xl pl-3 font-semibold text-black mb-6">Manage Orders</h2>
 
-      <div className="max-h-[30vh] overflow-y-auto border-2">
+      <div className="max-h-[50vh] overflow-y-auto border-2">
         <table className="min-w-full overflow-hidden">
           <thead className="bg-[#C7AD7F]">
             <tr>
@@ -69,9 +85,7 @@ function AdminManage() {
                   <td className="px-4 py-2 border">
                     <select
                       value={order.status}
-                      onChange={(e) =>
-                        handleStatusChange(order.id, order.userName, e.target.value)
-                      }
+                      onChange={(e) => handleStatusChange(order.id, e.target.value)}
                       className="border rounded px-2 py-1"
                     >
                       <option value="Pending">Pending</option>
@@ -89,5 +103,3 @@ function AdminManage() {
     </div>
   );
 }
-
-export default AdminManage;

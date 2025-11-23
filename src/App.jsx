@@ -27,8 +27,9 @@ function App() {
 
           {/* Landing/Login/Registration */}
           <Route path="/landing" element={<LoadingPage />} />
-          <Route path="/signup" element={<Registration />} />
-          <Route path="/login" element={<Registration />} />
+          <Route path="/signup" element={<Registration register="signup" />} />
+          <Route path="/login" element={<Registration register="login" />} />
+
 
           {/* User pages */}
           <Route path="/menu" element={<ProductSection />} />
